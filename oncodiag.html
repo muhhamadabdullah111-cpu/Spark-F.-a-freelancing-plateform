@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OncoDiag AI — Cancer Prediction System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-deep:      #080f1a;
+    --bg-panel:     #0d1828;
+    --bg-card:      #111f33;
+    --bg-hover:     #162540;
+    --bg-active:    #1a2d4d;
+    --border:       rgba(99,159,255,0.12);
+    --border-med:   rgba(99,159,255,0.2);
+    --border-hi:    rgba(99,159,255,0.35);
+    --accent:       #3a8eff;
+    --accent-glow:  rgba(58,142,255,0.18);
+    --accent-dim:   rgba(58,142,255,0.08);
+    --txt-1:        #e8f0ff;
+    --txt-2:        #8fa8cc;
+    --txt-3:        #4a6080;
+    --red:          #ff4d6a;
+    --red-bg:       rgba(255,77,106,0.1);
+    --green:        #22d3a0;
+    --green-bg:     rgba(34,211,160,0.1);
+    --amber:        #f59e0b;
+    --amber-bg:     rgba(245,158,11,0.1);
+    --radius-sm:    6px;
+    --radius-md:    10px;
+    --radius-lg:    14px;
+    --sidebar-w:    268px;
+    --font:         'DM Sans', sans-serif;
+    --mono:         'DM Mono', monospace;
+  }
+
+  html, body { height: 100%; background: var(--bg-deep); font-family: var(--font); color: var(--txt-1); overflow: hidden; }
+
+  /* ─── LAYOUT ─── */
+  .app { display: flex; height: 100vh; }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* LOGO */
+  .logo-wrap {
+    padding: 20px 18px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    flex-shrink: 0;
+  }
+  .logo-mark {
+    width: 36px; height: 36px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, #1557c0 0%, #3a8eff 100%);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    box-shadow: 0 0 16px rgba(58,142,255,0.35);
+  }
+  .logo-mark svg { width: 20px; height: 20px; }
+  .logo-texts { display: flex; flex-direction: column; }
+  .logo-name { font-size: 14px; font-weight: 600; color: var(--txt-1); letter-spacing: 0.01em; }
+  .logo-tagline { font-size: 10.5px; color: var(--txt-3); letter-spacing: 0.04em; margin-top: 1px; }
+
+  /* NEW BTN */
+  .new-analysis-btn {
+    margin: 14px 12px 6px;
+    padding: 9px 14px;
+    background: var(--accent-dim);
+    border: 1px solid var(--border-med);
+    border-radius: var(--radius-md);
+    color: var(--accent);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+  }
+  .new-analysis-btn:hover { background: rgba(58,142,255,0.14); border-color: var(--border-hi); }
+  .new-analysis-btn .ic { font-size: 17px; line-height: 1; }
+
+  /* HISTORY */
+  .section-label {
+    padding: 10px 18px 5px;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--txt-3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  .history-scroll { flex: 1; overflow-y: auto; padding: 2px 8px 8px; }
+  .history-scroll::-webkit-scrollbar { width: 3px; }
+  .history-scroll::-webkit-scrollbar-track { background: transparent; }
+  .history-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .hist-item {
+    padding: 9px 10px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    cursor: pointer;
+    margin-bottom: 1px;
+    transition: background 0.12s;
+    border: 1px solid transparent;
+  }
+  .hist-item:hover { background: var(--bg-hover); }
+  .hist-item.active { background: var(--bg-active); border-color: var(--border); }
+
+  .hist-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .hist-dot.positive { background: var(--red); box-shadow: 0 0 6px rgba(255,77,106,0.5); }
+  .hist-dot.negative { background: var(--green); box-shadow: 0 0 6px rgba(34,211,160,0.4); }
+  .hist-dot.pending  { background: var(--amber); box-shadow: 0 0 6px rgba(245,158,11,0.4); }
+
+  .hist-info { flex: 1; min-width: 0; }
+  .hist-title { font-size: 12.5px; color: var(--txt-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hist-meta  { font-size: 10.5px; color: var(--txt-3); margin-top: 1px; }
+
+  .hist-tag {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 99px;
+    font-weight: 500;
+    flex-shrink: 0;
+    font-family: var(--mono);
+  }
+  .hist-tag.positive { background: var(--red-bg); color: var(--red); }
+  .hist-tag.negative { background: var(--green-bg); color: var(--green); }
+  .hist-tag.pending  { background: var(--amber-bg); color: var(--amber); }
+
+  /* BOTTOM ACTIONS */
+  .sidebar-actions {
+    border-top: 1px solid var(--border);
+    padding: 8px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: var(--radius-md);
+    background: transparent;
+    border: none;
+    color: var(--txt-2);
+    font-family: var(--font);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+    width: 100%;
+    text-align: left;
+  }
+  .action-btn:hover { background: var(--bg-hover); color: var(--txt-1); }
+  .action-btn svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.7; }
+
+  /* USER ROW */
+  .user-row {
+    border-top: 1px solid var(--border);
+    padding: 12px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: background 0.12s;
+    flex-shrink: 0;
+  }
+  .user-row:hover { background: var(--bg-hover); }
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1557c0, #3a8eff);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #c8deff;
+    flex-shrink: 0;
+  }
+  .user-details { flex: 1; min-width: 0; }
+  .user-name  { font-size: 13px; font-weight: 500; color: var(--txt-1); }
+  .user-role  { font-size: 11px; color: var(--txt-3); }
+  .user-more  { color: var(--txt-3); font-size: 16px; line-height: 1; padding: 4px; }
+
+  /* ─── MAIN ─── */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg-deep);
+  }
+
+  /* TOPBAR */
+  .topbar {
+    border-bottom: 1px solid var(--border);
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    background: var(--bg-panel);
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .topbar-title { font-size: 15px; font-weight: 500; color: var(--txt-1); }
+  .model-badge {
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 3px 10px;
+    border-radius: 99px;
+    background: var(--accent-dim);
+    border: 1px solid var(--border-med);
+    color: var(--accent);
+  }
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+  .icon-btn {
+    width: 32px; height: 32px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--txt-2);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .icon-btn:hover { background: var(--bg-hover); border-color: var(--border-med); }
+  .icon-btn svg { width: 15px; height: 15px; }
+
+  /* CONTENT SCROLL */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+  .content::-webkit-scrollbar { width: 4px; }
+  .content::-webkit-scrollbar-track { background: transparent; }
+  .content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* STEP INDICATOR */
+  .steps-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--txt-3);
+    font-weight: 500;
+  }
+  .step.active { color: var(--accent); }
+  .step.done   { color: var(--green); }
+  .step-num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    font-family: var(--mono);
+    flex-shrink: 0;
+  }
+  .step.done .step-num { background: var(--green-bg); }
+  .step.active .step-num { background: var(--accent-dim); }
+  .step-line { width: 32px; height: 1px; background: var(--border); margin: 0 6px; }
+
+  /* UPLOAD CARD */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-title { font-size: 13px; font-weight: 500; color: var(--txt-1); display: flex; align-items: center; gap: 8px; }
+  .card-title svg { width: 15px; height: 15px; color: var(--accent); }
+  .card-body { padding: 20px; }
+
+  /* FILE UPLOAD ZONES */
+  .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  .upload-zone {
+    border: 1.5px dashed var(--border-med);
+    border-radius: var(--radius-lg);
+    padding: 24px 16px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+    text-align: center;
+    background: var(--bg-panel);
+  }
+  .upload-zone:hover { border-color: var(--accent); background: var(--accent-dim); }
+  .upload-zone input[type="file"] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer;
+    width: 100%; height: 100%;
+  }
+  .upload-zone.has-file { border-style: solid; border-color: var(--border-hi); background: rgba(58,142,255,0.05); }
+  .upload-zone.has-file.csv-done { border-color: rgba(34,211,160,0.4); background: rgba(34,211,160,0.04); }
+  .upload-zone.has-file.zip-done { border-color: rgba(245,158,11,0.4); background: rgba(245,158,11,0.04); }
+
+  .zone-icon {
+    width: 44px; height: 44px;
+    border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .zone-icon.csv { background: rgba(34,211,160,0.12); }
+  .zone-icon.zip { background: rgba(245,158,11,0.10); }
+  .zone-icon svg { width: 22px; height: 22px; }
+
+  .zone-label  { font-size: 13.5px; font-weight: 500; color: var(--txt-1); }
+  .zone-type   { font-size: 11px; font-family: var(--mono); padding: 2px 8px; border-radius: 4px; }
+  .zone-type.csv { background: rgba(34,211,160,0.12); color: var(--green); }
+  .zone-type.zip { background: rgba(245,158,11,0.10); color: var(--amber); }
+  .zone-hint   { font-size: 11.5px; color: var(--txt-3); line-height: 1.5; }
+  .zone-fname  { font-size: 11.5px; font-family: var(--mono); color: var(--accent); min-height: 16px; word-break: break-all; }
+
+  /* ACTION ROW */
+  .action-row { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+
+  .run-btn {
+    padding: 10px 22px;
+    border-radius: var(--radius-md);
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 13.5px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s, opacity 0.15s, transform 0.1s;
+    box-shadow: 0 4px 16px rgba(58,142,255,0.25);
+  }
+  .run-btn:hover:not(:disabled) { background: #2a7ef0; transform: translateY(-1px); }
+  .run-btn:active:not(:disabled) { transform: translateY(0); }
+  .run-btn:disabled { background: var(--bg-hover); color: var(--txt-3); cursor: not-allowed; box-shadow: none; }
+  .run-btn svg { width: 15px; height: 15px; }
+
+  .clear-btn {
+    padding: 10px 16px;
+    border-radius: var(--radius-md);
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--txt-2);
+    font-family: var(--font);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .clear-btn:hover { background: var(--bg-hover); border-color: var(--border-med); }
+
+  .status-msg { font-size: 12px; color: var(--txt-3); }
+  .status-msg span { color: var(--accent); }
+
+  /* RESULTS */
+  .results-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+
+  .metric-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .metric-card.danger::before  { background: linear-gradient(90deg, var(--red), transparent); }
+  .metric-card.success::before { background: linear-gradient(90deg, var(--green), transparent); }
+  .metric-card.info::before    { background: linear-gradient(90deg, var(--accent), transparent); }
+
+  .metric-label { font-size: 11px; color: var(--txt-3); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 8px; }
+  .metric-value { font-size: 28px; font-weight: 600; font-family: var(--mono); line-height: 1; }
+  .metric-value.danger  { color: var(--red); }
+  .metric-value.success { color: var(--green); }
+  .metric-value.info    { color: var(--accent); }
+  .metric-sub { font-size: 11px; color: var(--txt-3); margin-top: 5px; }
+  .metric-bar { height: 3px; border-radius: 2px; background: var(--border); margin-top: 10px; overflow: hidden; }
+  .metric-fill { height: 100%; border-radius: 2px; transition: width 1s ease; }
+  .metric-fill.danger  { background: var(--red); width: 34%; }
+  .metric-fill.success { background: var(--green); width: 66%; }
+  .metric-fill.info    { background: var(--accent); width: 89%; }
+
+  /* DATA PREVIEW TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead tr { border-bottom: 1px solid var(--border); }
+  th { padding: 8px 12px; color: var(--txt-3); font-weight: 500; text-align: left; letter-spacing: 0.04em; font-size: 11px; text-transform: uppercase; }
+  td { padding: 9px 12px; color: var(--txt-2); border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: 11.5px; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg-hover); }
+  .badge-pos { padding: 2px 8px; border-radius: 4px; background: var(--red-bg); color: var(--red); font-weight: 500; }
+  .badge-neg { padding: 2px 8px; border-radius: 4px; background: var(--green-bg); color: var(--green); font-weight: 500; }
+  .conf-bar { display: flex; align-items: center; gap: 6px; }
+  .conf-track { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .conf-fill  { height: 100%; border-radius: 2px; background: var(--accent); }
+
+  /* LOADING SPINNER */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+  .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+
+  /* NOTIFICATIONS */
+  .notif-area { position: fixed; bottom: 20px; right: 24px; display: flex; flex-direction: column; gap: 8px; z-index: 100; }
+  .notif {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    font-size: 12.5px;
+    color: var(--txt-1);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 240px;
+    animation: slideIn 0.2s ease;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .notif svg { width: 14px; height: 14px; flex-shrink: 0; }
+  @keyframes slideIn { from { opacity:0; transform: translateX(16px); } to { opacity:1; transform: translateX(0); } }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .upload-grid { grid-template-columns: 1fr; }
+    .results-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 600px) {
+    .results-grid { grid-template-columns: 1fr; }
+    .content { padding: 18px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ═══════════════ SIDEBAR ═══════════════ -->
+  <aside class="sidebar">
+
+    <!-- Logo -->
+    <div class="logo-wrap">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#c8deff" stroke-width="1.8" stroke-linecap="round">
+          <circle cx="12" cy="12" r="8"/>
+          <path d="M8 12h8M12 8v8"/>
+          <circle cx="12" cy="12" r="2.5" fill="#c8deff" stroke="none"/>
+        </svg>
+      </div>
+      <div class="logo-texts">
+        <div class="logo-name">OncoDiag AI</div>
+        <div class="logo-tagline">Cancer Prediction System</div>
+      </div>
+    </div>
+
+    <!-- New analysis button -->
+    <button class="new-analysis-btn" onclick="resetAll()">
+      <span class="ic">+</span> New analysis
+    </button>
+
+    <!-- History -->
+    <div class="section-label">Recent history</div>
+
+    <div class="history-scroll">
+      <div class="hist-item active" onclick="selectHistory(this)">
+        <div class="hist-dot positive"></div>
+        <div class="hist-info">
+          <div class="hist-title">Patient_0041 — breast scan</div>
+          <div class="hist-meta">Today, 14:22</div>
+        </div>
+        <div class="hist-tag positive">+ve</div>
+      </div>
+      <div class="hist-item" onclick="selectHistory(this)">
+        <div class="hist-dot negative"></div>
+        <div class="hist-info">
+          <div class="hist-title">Patient_0039 — lung data</div>
+          <div class="hist-meta">Today, 11:05</div>
+        </div>
+        <div class="hist-tag negative">–ve</div>
+      </div>
+      <div class="hist-item" onclick="selectHistory(this)">
+        <div class="hist-dot positive"></div>
+        <div class="hist-info">
+          <div class="hist-title">Batch_07 — colon scans</div>
+          <div class="hist-meta">Yesterday, 18:44</div>
+        </div>
+        <div class="hist-tag positive">+ve</div>
+      </div>
+      <div class="hist-item" onclick="selectHistory(this)">
+        <div class="hist-dot negative"></div>
+        <div class="hist-info">
+          <div class="hist-title">Patient_0033 — MRI set</div>
+          <div class="hist-meta">Apr 8, 09:17</div>
+        </div>
+        <div class="hist-tag negative">–ve</div>
+      </div>
+      <div class="hist-item" onclick="selectHistory(this)">
+        <div class="hist-dot pending"></div>
+        <div class="hist-info">
+          <div class="hist-title">Patient_0031 — full panel</div>
+          <div class="hist-meta">Apr 8, 08:02</div>
+        </div>
+        <div class="hist-tag pending">pend</div>
+      </div>
+      <div class="hist-item" onclick="selectHistory(this)">
+        <div class="hist-dot negative"></div>
+        <div class="hist-info">
+          <div class="hist-title">Batch_06 — cervical</div>
+          <div class="hist-meta">Apr 7, 16:30</div>
+        </div>
+        <div class="hist-tag negative">–ve</div>
+      </div>
+      <div class="hist-item" onclick="selectHistory(this)">
+        <div class="hist-dot positive"></div>
+        <div class="hist-info">
+          <div class="hist-title">Patient_0027 — prostate</div>
+          <div class="hist-meta">Apr 6, 13:55</div>
+        </div>
+        <div class="hist-tag positive">+ve</div>
+      </div>
+      <div class="hist-item" onclick="selectHistory(this)">
+        <div class="hist-dot negative"></div>
+        <div class="hist-info">
+          <div class="hist-title">Patient_0024 — skin scan</div>
+          <div class="hist-meta">Apr 5, 10:10</div>
+        </div>
+        <div class="hist-tag negative">–ve</div>
+      </div>
+    </div>
+
+    <!-- Bottom nav buttons -->
+    <div class="sidebar-actions">
+      <button class="action-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <path d="M3 13h2l2 5 4-10 3 6 2-3h5"/>
+        </svg>
+        Analytics
+      </button>
+      <button class="action-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.07 4.93A10 10 0 1 1 4.93 19.07"/>
+        </svg>
+        Model settings
+      </button>
+      <button class="action-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <path d="M14 2v6h6M12 18v-4M10 16h4"/>
+        </svg>
+        Export reports
+      </button>
+      <button class="action-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 8v4m0 4h.01"/>
+        </svg>
+        Help &amp; documentation
+      </button>
+    </div>
+
+    <!-- User account row -->
+    <div class="user-row">
+      <div class="avatar">SA</div>
+      <div class="user-details">
+        <div class="user-name">Dr. Sara Ahmed</div>
+        <div class="user-role">Oncology Researcher</div>
+      </div>
+      <div class="user-more">⋯</div>
+    </div>
+
+  </aside>
+
+  <!-- ═══════════════ MAIN ═══════════════ -->
+  <main class="main">
+
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title">New cancer diagnosis</div>
+        <span class="model-badge">ML Model v2.1</span>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn" title="Refresh">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+            <path d="M4 4v5h5M20 20v-5h-5"/><path d="M4 9a8 8 0 0 1 14.93-2.5M20 15a8 8 0 0 1-14.93 2.5"/>
+          </svg>
+        </button>
+        <button class="icon-btn" title="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Scrollable content -->
+    <div class="content">
+
+      <!-- Step progress -->
+      <div class="steps-row">
+        <div class="step active" id="step1">
+          <div class="step-num">1</div> Upload data
+        </div>
+        <div class="step-line"></div>
+        <div class="step" id="step2">
+          <div class="step-num">2</div> Clean &amp; process
+        </div>
+        <div class="step-line"></div>
+        <div class="step" id="step3">
+          <div class="step-num">3</div> Run prediction
+        </div>
+        <div class="step-line"></div>
+        <div class="step" id="step4">
+          <div class="step-num">4</div> View results
+        </div>
+      </div>
+
+      <!-- Upload card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5M12 3v12"/>
+            </svg>
+            Patient data upload
+          </div>
+          <span style="font-size:11.5px; color:var(--txt-3);">Both files required</span>
+        </div>
+        <div class="card-body">
+          <p style="font-size:13px; color:var(--txt-2); line-height:1.65; margin-bottom:18px;">
+            Upload the patient's numeric CSV file containing lab results and biomarkers, and the ZIP archive with scan images and visual records. The system will automatically clean, normalize, and run the cancer prediction model.
+          </p>
+
+          <div class="upload-grid">
+            <!-- CSV Upload -->
+            <div class="upload-zone" id="csv-zone">
+              <input type="file" accept=".csv" id="csv-input" onchange="handleFile('csv', this)">
+              <div class="zone-icon csv">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#22d3a0" stroke-width="1.7" stroke-linecap="round">
+                  <rect x="3" y="3" width="18" height="18" rx="3"/>
+                  <path d="M9 9h6M9 12h6M9 15h4"/>
+                </svg>
+              </div>
+              <div class="zone-label">Numeric data</div>
+              <span class="zone-type csv">.CSV</span>
+              <div class="zone-hint">Patient lab values, biomarkers<br>and clinical features</div>
+              <div class="zone-fname" id="csv-fname">Click or drag to upload</div>
+            </div>
+
+            <!-- ZIP Upload -->
+            <div class="upload-zone" id="zip-zone">
+              <input type="file" accept=".zip,.ZIP" id="zip-input" onchange="handleFile('zip', this)">
+              <div class="zone-icon zip">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.7" stroke-linecap="round">
+                  <path d="M4 4h16v16H4z"/><path d="M9 4v16M12 7h2M12 10h2M12 13h2M12 16h2"/>
+                </svg>
+              </div>
+              <div class="zone-label">Image archive</div>
+              <span class="zone-type zip">.ZIP</span>
+              <div class="zone-hint">Scan images and visual<br>patient records</div>
+              <div class="zone-fname" id="zip-fname">Click or drag to upload</div>
+            </div>
+          </div>
+
+          <!-- Action row -->
+          <div class="action-row" style="margin-top: 20px;">
+            <button class="run-btn" id="run-btn" disabled onclick="runAnalysis()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Run prediction
+            </button>
+            <button class="clear-btn" onclick="clearFiles()">Clear files</button>
+            <span class="status-msg" id="status-msg">Select both files to enable prediction</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results metrics -->
+      <div class="results-grid">
+        <div class="metric-card danger">
+          <div class="metric-label">Prediction result</div>
+          <div class="metric-value danger">Positive</div>
+          <div class="metric-sub">34% cancer probability score</div>
+          <div class="metric-bar"><div class="metric-fill danger"></div></div>
+        </div>
+        <div class="metric-card success">
+          <div class="metric-label">Data cleaned</div>
+          <div class="metric-value success">66%</div>
+          <div class="metric-sub">Noise removed &amp; normalized</div>
+          <div class="metric-bar"><div class="metric-fill success"></div></div>
+        </div>
+        <div class="metric-card info">
+          <div class="metric-label">Model confidence</div>
+          <div class="metric-value info">89%</div>
+          <div class="metric-sub">High confidence prediction</div>
+          <div class="metric-bar"><div class="metric-fill info"></div></div>
+        </div>
+      </div>
+
+      <!-- Recent predictions table -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+              <path d="M3 3h18v4H3zM3 10h18v4H3zM3 17h18v4H3z"/>
+            </svg>
+            Recent predictions
+          </div>
+          <span style="font-size:11.5px; color: var(--accent); cursor:pointer;">View all →</span>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Patient ID</th>
+                  <th>Cancer type</th>
+                  <th>Result</th>
+                  <th>Confidence</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>PT-0041</td>
+                  <td>Breast</td>
+                  <td><span class="badge-pos">Positive</span></td>
+                  <td>
+                    <div class="conf-bar">
+                      <div class="conf-track"><div class="conf-fill" style="width:89%"></div></div>
+                      <span style="min-width:30px; text-align:right;">89%</span>
+                    </div>
+                  </td>
+                  <td>Apr 10, 14:22</td>
+                </tr>
+                <tr>
+                  <td>PT-0039</td>
+                  <td>Lung</td>
+                  <td><span class="badge-neg">Negative</span></td>
+                  <td>
+                    <div class="conf-bar">
+                      <div class="conf-track"><div class="conf-fill" style="width:94%"></div></div>
+                      <span style="min-width:30px; text-align:right;">94%</span>
+                    </div>
+                  </td>
+                  <td>Apr 10, 11:05</td>
+                </tr>
+                <tr>
+                  <td>PT-0033</td>
+                  <td>Colon</td>
+                  <td><span class="badge-neg">Negative</span></td>
+                  <td>
+                    <div class="conf-bar">
+                      <div class="conf-track"><div class="conf-fill" style="width:77%"></div></div>
+                      <span style="min-width:30px; text-align:right;">77%</span>
+                    </div>
+                  </td>
+                  <td>Apr 8, 09:17</td>
+                </tr>
+                <tr>
+                  <td>PT-0027</td>
+                  <td>Prostate</td>
+                  <td><span class="badge-pos">Positive</span></td>
+                  <td>
+                    <div class="conf-bar">
+                      <div class="conf-track"><div class="conf-fill" style="width:82%"></div></div>
+                      <span style="min-width:30px; text-align:right;">82%</span>
+                    </div>
+                  </td>
+                  <td>Apr 6, 13:55</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end .content -->
+  </main>
+</div>
+
+<!-- Notifications -->
+<div class="notif-area" id="notif-area"></div>
+
+<script>
+  const state = { csv: false, zip: false, running: false };
+
+  function handleFile(type, input) {
+    if (!input.files.length) return;
+    const fname = input.files[0].name;
+    state[type] = true;
+
+    const fnameEl = document.getElementById(type + '-fname');
+    const zone    = document.getElementById(type + '-zone');
+
+    fnameEl.textContent = fname;
+    zone.classList.add('has-file');
+    zone.classList.add(type + '-done');
+
+    showNotif(type === 'csv'
+      ? 'CSV file loaded: ' + fname
+      : 'ZIP archive loaded: ' + fname,
+      type === 'csv' ? 'green' : 'amber'
+    );
+
+    updateRunBtn();
+  }
+
+  function updateRunBtn() {
+    const btn = document.getElementById('run-btn');
+    const msg = document.getElementById('status-msg');
+    if (state.csv && state.zip) {
+      btn.disabled = false;
+      msg.innerHTML = '<span>Both files ready</span> — click Run prediction';
+    } else if (state.csv) {
+      msg.textContent = 'CSV loaded. Upload ZIP archive to continue.';
+    } else if (state.zip) {
+      msg.textContent = 'ZIP loaded. Upload CSV file to continue.';
+    } else {
+      msg.textContent = 'Select both files to enable prediction';
+    }
+  }
+
+  function runAnalysis() {
+    if (state.running) return;
+    state.running = true;
+    const btn = document.getElementById('run-btn');
+    btn.innerHTML = '<div class="spinner"></div> Analyzing...';
+    btn.disabled = true;
+
+    setStep(2);
+    showNotif('Cleaning and normalizing data…', 'blue');
+
+    setTimeout(() => {
+      setStep(3);
+      showNotif('Running cancer prediction model…', 'blue');
+    }, 1200);
+
+    setTimeout(() => {
+      setStep(4);
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run prediction';
+      btn.disabled = false;
+      state.running = false;
+      showNotif('Prediction complete — result: Positive (89% confidence)', 'red');
+    }, 2600);
+  }
+
+  function setStep(n) {
+    for (let i = 1; i <= 4; i++) {
+      const el = document.getElementById('step' + i);
+      el.className = 'step' + (i < n ? ' done' : i === n ? ' active' : '');
+    }
+  }
+
+  function clearFiles() {
+    ['csv','zip'].forEach(t => {
+      state[t] = false;
+      document.getElementById(t + '-fname').textContent = 'Click or drag to upload';
+      document.getElementById(t + '-zone').classList.remove('has-file', t + '-done');
+      document.getElementById(t + '-input').value = '';
+    });
+    document.getElementById('run-btn').disabled = true;
+    document.getElementById('status-msg').textContent = 'Select both files to enable prediction';
+    setStep(1);
+  }
+
+  function resetAll() {
+    clearFiles();
+    showNotif('New analysis started', 'blue');
+  }
+
+  function selectHistory(el) {
+    document.querySelectorAll('.hist-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function showNotif(msg, color) {
+    const area = document.getElementById('notif-area');
+    const colors = {
+      green: { bg: 'rgba(34,211,160,0.08)', border: 'rgba(34,211,160,0.25)', clr: '#22d3a0' },
+      amber: { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.25)', clr: '#f59e0b' },
+      blue:  { bg: 'rgba(58,142,255,0.08)',  border: 'rgba(58,142,255,0.25)',  clr: '#3a8eff' },
+      red:   { bg: 'rgba(255,77,106,0.08)',  border: 'rgba(255,77,106,0.25)',  clr: '#ff4d6a' },
+    };
+    const c = colors[color] || colors.blue;
+    const n = document.createElement('div');
+    n.className = 'notif';
+    n.style.cssText = 'background:' + c.bg + ';border-color:' + c.border;
+    n.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="${c.clr}" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg><span>${msg}</span>`;
+    area.appendChild(n);
+    setTimeout(() => n.remove(), 3500);
+  }
+</script>
+</body>
+</html>
