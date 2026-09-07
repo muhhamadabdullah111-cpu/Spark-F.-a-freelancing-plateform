@@ -1,0 +1,71 @@
+.top-line{
+  width: 70%;
+  padding: 20px;
+  font-size: 20px;
+  text-align: center;
+
+}
+.section-heading {
+  color: green;
+  font-size: 24px;
+  text-align: center;
+  
+  margin: 20px 0;
+}
+
+.profile-container {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  margin-bottom: 50px;
+  
+}
+
+.profile {
+  background-color: white;
+  width: 200px;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  margin-bottom: 20px;
+  border: 10px black;
+  
+}
+
+.profile img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin-bottom: 15px;
+}
+
+.profile-name {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+.profile-job {
+  color: #777;
+  margin-bottom: 10px;
+}
+
+.profile-price {
+  font-size: 20px;
+  color: #28a745;
+  margin-bottom: 15px;
+}
+
+.hire-btn {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.hire-btn :hover{
+  background-color: black;
+}
